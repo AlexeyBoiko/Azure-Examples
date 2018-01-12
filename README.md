@@ -1,2 +1,2 @@
 # Azure-Examples
-Office-365 code examples
+Office 365 code examples
