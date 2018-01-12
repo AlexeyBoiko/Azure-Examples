@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Office 365 web app</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://secure.aadcdn.microsoftonline-p.com/lib/1.0.16/js/adal.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            "use strict";
+
+            // create config and get AuthenticationContext
+            window.config = {
+                tenant: "igtit.onmicrosoft.com",
+                clientId: "21efffd5-29fc-46dd-847e-c192bff48e87",
+                postLogoutRedirectUri: window.location.origin,
+                endpoints: {
+                    graphApiUri: "https://graph.microsoft.com",
+                },
+                cacheLocation: "localStorage"
+            };
+            var authContext = new AuthenticationContext(config);
+
+            var isCallback = authContext.isCallback(window.location.hash);
+            authContext.handleWindowCallback();
+
+            if (isCallback && !authContext.getLoginError()) {
+                window.location = authContext._getItem(authContext.CONSTANTS.STORAGE.LOGIN_REQUEST);
+            }
+
+            // check if user need to login
+            var user = authContext.getCachedUser();
+            var token = authContext.getCachedToken(config.clientId);
+            if (!user || !token) {
+                authContext.login();
+            }
+
+            // use token
+            authContext.acquireToken(config.endpoints.graphApiUri, function (error, token) {
+                if (error || !token) {
+                    // TODO: for some error call authContext.login()
+                    console.log("ADAL error: " + error);
+                    return;
+                }
+
+                if (error || !token) {
+                    // TODO: for some error call authContext.login()
+                    console.log("ADAL error: " + error);
+                    return;
+                }
+                else {
+                    var url = config.endpoints.graphApiUri + "/v1.0/me/messages";
+
+                    $.ajax({
+                        type: "GET",
+                        url: url,
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        }
+                    }).done(function (response) {
+                        var items = response.value;
+                        for (var i = 0; i < items.length; i++) {
+                            console.log(items[i].subject);
+                            $("#msgs").append("<li>" + items[i].subject + "</li>");
+                        }
+                    }).fail(function () {
+                        console.log("Error");
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Office 365 web app</h1>
+    <h2>Messages</h2>
+    <ul id="msgs"></ul>
+</body>
+</html>
